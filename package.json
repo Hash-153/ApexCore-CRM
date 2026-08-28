@@ -1,0 +1,58 @@
+{
+  "name": "medicore-health-os",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Enterprise Healthcare & Clinical Information System with HL7 FHIR R4, HIPAA Compliance, EHR, LIMS, Telehealth, and ICD-10 Billing",
+  "main": "server/src/server.ts",
+  "scripts": {
+    "dev:server": "tsx watch server/src/server.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "vite build --config client/vite.config.ts",
+    "build": "npm run build:server && npm run build:client",
+    "test": "tsx --test server/tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "healthcare",
+    "ehr",
+    "emr",
+    "fhir",
+    "hipaa",
+    "telehealth",
+    "lims",
+    "icd-10",
+    "cpt",
+    "clinical-decision-support"
+  ],
+  "author": "Health Tech Engineering Team",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

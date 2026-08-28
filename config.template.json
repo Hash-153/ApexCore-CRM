@@ -1,0 +1,32 @@
+{
+  "server": {
+    "nodeEnv": "development",
+    "port": 5000,
+    "apiPrefix": "/api/v1",
+    "corsOrigin": "http://localhost:3000"
+  },
+  "security": {
+    "jwtSecret": "CHANGE_IN_PRODUCTION_MEDICORE_SECURE_KEY_256",
+    "jwtExpiresIn": "8h",
+    "bcryptRounds": 12,
+    "enableDeidentification": true,
+    "phiMaskingEnabled": true
+  },
+  "hipaa": {
+    "enableAuditLogging": true,
+    "auditLogPath": "./logs/hipaa_audit.log",
+    "retentionDays": 2190,
+    "tamperEvidentChaining": true
+  },
+  "clinical": {
+    "maxNews2CriticalThreshold": 7,
+    "enableDrugInteractionEngine": true,
+    "enableEsiTriage": true,
+    "enablePediatricSafetyCeiling": true
+  },
+  "interoperability": {
+    "fhirVersion": "R4",
+    "hl7Version": "2.5.1",
+    "mllpPort": 2575
+  }
+}
