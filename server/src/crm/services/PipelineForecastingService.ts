@@ -153,12 +153,15 @@ export class PipelineForecastingService {
 
     if (blockers.length === 0) {
       const now = new Date().toISOString();
+      if (!opp.stageHistory) {
+        opp.stageHistory = [];
+      }
       opp.stageHistory.push({
         fromStage: opp.stage,
         toStage: targetStage,
         changedAt: now,
         changedBy: actorId,
-        durationInPreviousStageDays: opp.daysInCurrentStage
+        durationInPreviousStageDays: opp.daysInCurrentStage || 0
       });
 
       opp.stage = targetStage;

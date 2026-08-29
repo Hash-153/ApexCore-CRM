@@ -1,190 +1,307 @@
 /**
- * ApexCore Enterprise Customer Relationship Management (CRM)
- * Frontend REST API Client
+ * ApexCore Enterprise CRM - Frontend API Client
+ * Type-safe HTTP client for User Authentication, 5-Role RBAC, Customer 360,
+ * Interactions, Notes/Attachments, BANT Leads, MEDDIC Pipeline, CPQ, and Helpdesk.
  */
 
-const API_BASE = '/api/crm';
+const API_BASE = '/api';
 
-export interface CRMApiResponse<T> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   count?: number;
   error?: string;
+  integrity?: any;
   message?: string;
-  blockers?: string[];
-  integrity?: { isValid: boolean; brokenAtLogId?: string };
+  user?: any;
+  token?: string;
+  session?: any;
+  resetToken?: string;
 }
 
 export class CRMApiClient {
-  private static tenantId: string = 'tenant_apex_global_001';
-  private static userId: string = 'usr_marcus_vance';
+  private static token: string = localStorage.getItem('apexcore_auth_token') || '';
 
-  public static setContext(tenantId: string, userId: string) {
-    this.tenantId = tenantId;
-    this.userId = userId;
+  public static setAuthToken(token: string) {
+    this.token = token;
+    if (token) {
+      localStorage.setItem('apexcore_auth_token', token);
+    } else {
+      localStorage.removeItem('apexcore_auth_token');
+    }
   }
 
-  private static getHeaders(): HeadersInit {
-    return {
+  public static getAuthToken(): string {
+    return this.token;
+  }
+
+  private static async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-tenant-id': this.tenantId,
-      'x-user-id': this.userId
+      ...(options.headers as Record<string, string> || {})
     };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers
+      });
+      const data = await res.json();
+      return data;
+    } catch (err: any) {
+      console.error(`[API ERROR] ${endpoint}:`, err);
+      return { success: false, error: err.message || 'Network request failed' };
+    }
   }
 
-  public static async getHealth(): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/health`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getKPIs(): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/analytics/kpis`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getLeaderboard(): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/analytics/leaderboard`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getARRWaterfall(): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/analytics/arr-waterfall`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getLeads(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/leads`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async createLead(leadData: any): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/leads`, {
+  // ==========================================================================
+  // 1. User Authentication & 5 Core Roles
+  // ==========================================================================
+  public static async login(email: string, password: string): Promise<ApiResponse> {
+    const res = await this.request('/auth/login', {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(leadData)
+      body: JSON.stringify({ email, password })
     });
-    return res.json();
+    if (res.success && res.token) {
+      this.setAuthToken(res.token);
+    }
+    return res;
   }
 
-  public static async convertLead(leadId: string, options: any): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/leads/${leadId}/convert`, {
+  public static async register(userData: any): Promise<ApiResponse> {
+    const res = await this.request('/auth/register', {
       method: 'POST',
-      headers: this.getHeaders(),
+      body: JSON.stringify(userData)
+    });
+    if (res.success && res.token) {
+      this.setAuthToken(res.token);
+    }
+    return res;
+  }
+
+  public static async forgotPassword(email: string): Promise<ApiResponse> {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+  }
+
+  public static async resetPassword(token: string, newPassword: string): Promise<ApiResponse> {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword })
+    });
+  }
+
+  public static async getCurrentUser(): Promise<ApiResponse> {
+    return this.request('/auth/me');
+  }
+
+  public static async logout(): Promise<ApiResponse> {
+    const res = await this.request('/auth/logout', { method: 'POST' });
+    this.setAuthToken('');
+    return res;
+  }
+
+  public static async getUsers(): Promise<ApiResponse> {
+    return this.request('/auth/users');
+  }
+
+  public static async updateUserRole(userId: string, role: string): Promise<ApiResponse> {
+    return this.request(`/auth/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role })
+    });
+  }
+
+  public static async getRoles(): Promise<ApiResponse> {
+    return this.request('/auth/roles');
+  }
+
+  // ==========================================================================
+  // 2. Customer Management & Customer 360
+  // ==========================================================================
+  public static async getCustomers(params?: { search?: string; status?: string; tier?: string; industry?: string }): Promise<ApiResponse> {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/customers${query ? `?${query}` : ''}`);
+  }
+
+  public static async createCustomer(customerData: any): Promise<ApiResponse> {
+    return this.request('/customers', {
+      method: 'POST',
+      body: JSON.stringify(customerData)
+    });
+  }
+
+  public static async getCustomerProfile(id: string): Promise<ApiResponse> {
+    return this.request(`/customers/${id}`);
+  }
+
+  public static async updateCustomer(id: string, updates: any): Promise<ApiResponse> {
+    return this.request(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
+  public static async deleteCustomer(id: string): Promise<ApiResponse> {
+    return this.request(`/customers/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  public static async setCustomerStatus(id: string, status: string): Promise<ApiResponse> {
+    return this.request(`/customers/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    });
+  }
+
+  public static async getInteractions(customerId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/interactions`);
+  }
+
+  public static async logInteraction(customerId: string, interactionData: any): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/interactions`, {
+      method: 'POST',
+      body: JSON.stringify(interactionData)
+    });
+  }
+
+  public static async getNotes(customerId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/notes`);
+  }
+
+  public static async addNote(customerId: string, noteData: any): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(noteData)
+    });
+  }
+
+  public static async togglePinNote(customerId: string, noteId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/notes/${noteId}/pin`, {
+      method: 'PUT'
+    });
+  }
+
+  public static async deleteNote(customerId: string, noteId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/notes/${noteId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  public static async getAttachments(customerId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/attachments`);
+  }
+
+  public static async addAttachment(customerId: string, attachmentData: any): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/attachments`, {
+      method: 'POST',
+      body: JSON.stringify(attachmentData)
+    });
+  }
+
+  public static async deleteAttachment(customerId: string, attachmentId: string): Promise<ApiResponse> {
+    return this.request(`/customers/${customerId}/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // ==========================================================================
+  // 3. Leads, Opportunities & Sales Forecasting
+  // ==========================================================================
+  public static async getLeads(): Promise<ApiResponse> {
+    return this.request('/leads');
+  }
+
+  public static async evaluateBANT(leadId: string, answers: any): Promise<ApiResponse> {
+    return this.request(`/leads/${leadId}/evaluate-bant`, {
+      method: 'POST',
+      body: JSON.stringify(answers)
+    });
+  }
+
+  public static async convertLead(leadId: string, options: any): Promise<ApiResponse> {
+    return this.request(`/leads/${leadId}/convert`, {
+      method: 'POST',
       body: JSON.stringify(options)
     });
-    return res.json();
   }
 
-  public static async getAccounts(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/accounts`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getOpportunities(): Promise<ApiResponse> {
+    return this.request('/opportunities');
   }
 
-  public static async getAccountDetails(accountId: string): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/accounts/${accountId}`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getPipelineForecast(): Promise<ApiResponse> {
+    return this.request('/opportunities/pipeline-forecast');
   }
 
-  public static async getOpportunities(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/opportunities`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getPipelineForecast(pipelineId: string): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/pipelines/${pipelineId}/forecast`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async transitionOpportunityStage(oppId: string, targetStage: string): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/opportunities/${oppId}/stage`, {
+  public static async validateStageTransition(oppId: string, targetStage: string): Promise<ApiResponse> {
+    return this.request(`/opportunities/${oppId}/transition-gate`, {
       method: 'POST',
-      headers: this.getHeaders(),
       body: JSON.stringify({ targetStage })
     });
-    return res.json();
   }
 
-  public static async getProducts(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/products`, { headers: this.getHeaders() });
-    return res.json();
+  // ==========================================================================
+  // 4. CPQ, SLA Helpdesk & Marketing
+  // ==========================================================================
+  public static async getProducts(): Promise<ApiResponse> {
+    return this.request('/cpq/products');
   }
 
-  public static async getPriceBooks(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/pricebooks`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getPriceBooks(): Promise<ApiResponse> {
+    return this.request('/cpq/price-books');
   }
 
-  public static async createQuote(quoteData: any): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/quotes`, {
+  public static async createQuote(quoteConfig: any): Promise<ApiResponse> {
+    return this.request('/cpq/quotes/calculate', {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(quoteData)
+      body: JSON.stringify(quoteConfig)
     });
-    return res.json();
   }
 
-  public static async reviewQuote(quoteId: string, decision: 'APPROVE' | 'REJECT', rejectionReason?: string): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/quotes/${quoteId}/review`, {
+  public static async getTickets(): Promise<ApiResponse> {
+    return this.request('/helpdesk/tickets');
+  }
+
+  public static async addTicketComment(ticketId: string, content: string): Promise<ApiResponse> {
+    return this.request(`/helpdesk/tickets/${ticketId}/comments`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ decision, rejectionReason })
+      body: JSON.stringify({ content })
     });
-    return res.json();
   }
 
-  public static async getTickets(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/tickets`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getCampaigns(): Promise<ApiResponse> {
+    return this.request('/marketing/campaigns');
   }
 
-  public static async createTicket(ticketData: any): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/tickets`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(ticketData)
-    });
-    return res.json();
+  public static async getAttribution(opportunityId: string, model: string = 'LINEAR'): Promise<ApiResponse> {
+    return this.request(`/marketing/attribution?opportunityId=${opportunityId}&model=${model}`);
   }
 
-  public static async addTicketComment(ticketId: string, content: string, isInternalOnly: boolean = false): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/tickets/${ticketId}/comments`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ content, isInternalOnly })
-    });
-    return res.json();
+  public static async getWorkflows(): Promise<ApiResponse> {
+    return this.request('/workflows');
   }
 
-  public static async getCampaigns(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/campaigns`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getCustomFields(): Promise<ApiResponse> {
+    return this.request('/schemas/custom-fields');
   }
 
-  public static async getAttribution(oppId: string, model: string = 'LINEAR'): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/attribution/${oppId}?model=${model}`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getKPIs(): Promise<ApiResponse> {
+    return this.request('/analytics/kpis');
   }
 
-  public static async getWorkflows(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/workflows`, { headers: this.getHeaders() });
-    return res.json();
+  public static async getLeaderboard(): Promise<ApiResponse> {
+    return this.request('/analytics/leaderboard');
   }
 
-  public static async getCustomFields(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/custom-fields`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async getAuditLogs(): Promise<CRMApiResponse<any[]>> {
-    const res = await fetch(`${API_BASE}/audit-logs`, { headers: this.getHeaders() });
-    return res.json();
-  }
-
-  public static async resetDatabase(): Promise<CRMApiResponse<any>> {
-    const res = await fetch(`${API_BASE}/seed`, {
-      method: 'POST',
-      headers: this.getHeaders()
-    });
-    return res.json();
+  public static async getAuditLogs(): Promise<ApiResponse> {
+    return this.request('/audit/logs');
   }
 }
