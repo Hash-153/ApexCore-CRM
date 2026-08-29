@@ -1,5 +1,5 @@
 {
-  "name": "apexcore-crm-enterprise",
+  "name": "apexcore-crm",
   "version": "2.0.0",
   "type": "module",
   "description": "Enterprise Customer Relationship Management (CRM) Platform with 5-Role RBAC, Account 360, BANT Qualification, MEDDIC Pipeline Forecasting, CPQ Engine, SLA Helpdesk, and Visual Workflows",

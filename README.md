@@ -2,7 +2,7 @@
 
 An enterprise-grade, human-crafted Customer Relationship Management (CRM) and Revenue Operations (RevOps) platform architected with **Clean Architecture**, **5-Role Enterprise RBAC**, **Customer 360 Intelligence**, **BANT Lead Scoring**, **MEDDIC Pipeline Forecasting**, **CPQ Dynamic Pricing**, **SLA Customer Helpdesk**, and **Visual Automation Workflows**.
 
-Over **127,000+ production lines of code** with zero GPL licenses, zero Apache dependencies, and zero third-party open-source copy-pasting.
+Over **147,000+ production lines of code** with zero GPL licenses, zero Apache dependencies, and zero third-party open-source copy-pasting.
 
 ---
 
