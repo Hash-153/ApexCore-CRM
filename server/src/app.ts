@@ -20,6 +20,7 @@ import auditRouter from './modules/audit/audit.router.ts';
 import radiologyRouter from './radiology/radiology.router.ts';
 import inpatientRouter from './inpatient/inpatient.router.ts';
 import emarRouter from './emar/emar.router.ts';
+import { createCRMRouter } from './crm/routes/crmRoutes.ts';
 
 export const app = express();
 
@@ -71,6 +72,8 @@ app.use(`${config.apiPrefix}/audit`, auditRouter);
 app.use(`${config.apiPrefix}/radiology`, radiologyRouter);
 app.use(`${config.apiPrefix}/inpatient`, inpatientRouter);
 app.use(`${config.apiPrefix}/emar`, emarRouter);
+app.use(`${config.apiPrefix}/crm`, createCRMRouter());
+app.use('/api/crm', createCRMRouter());
 
 // 404 Route Catch-All
 app.use((req: Request, res: Response) => {

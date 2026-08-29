@@ -16,11 +16,14 @@ import { TelehealthSuite } from './components/telehealth/TelehealthSuite';
 import { BillingCenter } from './components/billing/BillingCenter';
 import { AuditViewer } from './components/audit/AuditViewer';
 import { ClinicalCalculatorsModal } from './components/clinical/ClinicalCalculatorsModal';
+import { CRMApp } from './crm/CRMApp';
 import type { PatientRecord } from './types/index';
 import { api } from './services/api';
+import { Briefcase, Activity } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
   const { currentUser } = useAuth();
+  const [platformMode, setPlatformMode] = useState<'CLINICAL_EHR' | 'ENTERPRISE_CRM'>('ENTERPRISE_CRM');
   const [activeTab, setActiveTab] = useState<NavTab>('DASHBOARD');
   const [activePatient, setActivePatient] = useState<PatientRecord | null>(null);
   const [showCalculators, setShowCalculators] = useState(false);
@@ -59,8 +62,26 @@ const MainLayout: React.FC = () => {
     }
   };
 
+  if (platformMode === 'ENTERPRISE_CRM') {
+    return (
+      <div className="relative">
+        <CRMApp />
+        {/* Platform Mode Switcher Button */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => setPlatformMode('CLINICAL_EHR')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold shadow-2xl hover:bg-slate-800 transition"
+          >
+            <Activity className="w-4 h-4 text-emerald-400" />
+            Switch to Clinical HealthOS
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-slate-950 flex flex-col relative">
       <Header activePatient={activePatient} onOpenCalculators={() => setShowCalculators(true)} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -93,6 +114,17 @@ const MainLayout: React.FC = () => {
             {activeTab === 'HIPAA_AUDIT' && <AuditViewer />}
           </div>
         </main>
+      </div>
+
+      {/* Floating Toggle to Switch to ApexCore CRM */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={() => setPlatformMode('ENTERPRISE_CRM')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-indigo-600 border border-indigo-500 text-white text-xs font-bold shadow-2xl hover:bg-indigo-500 transition"
+        >
+          <Briefcase className="w-4 h-4 text-white" />
+          Switch to ApexCore CRM
+        </button>
       </div>
 
       <ClinicalCalculatorsModal isOpen={showCalculators} onClose={() => setShowCalculators(false)} />

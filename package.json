@@ -11,7 +11,8 @@
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "vite build --config client/vite.config.ts",
     "build": "npm run build:server && npm run build:client",
-    "test": "tsx --test server/tests/*.test.ts",
+    "test": "node --experimental-strip-types --test server/tests/crm/*.test.ts server/tests/*.test.ts",
+    "test:crm": "node --experimental-strip-types --test server/tests/crm/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

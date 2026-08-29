@@ -774,7 +774,7 @@ export function seedCRMDatabase(db: CRMDatabase): void {
       policyTier: SLAPolicyTier.PLATINUM_MISSION_CRITICAL,
       firstResponseDueAt: new Date(Date.now() + 45 * 60000).toISOString(),
       resolutionDueAt: new Date(Date.now() + 7 * 3600000).toISOString(),
-      firstResponseMetAt: new Date(Date.now() - 10 * 60000).toISOString(),
+      firstResponseMetAt: undefined,
       isFirstResponseBreached: false,
       isResolutionBreached: false,
       minutesRemainingToResolution: 420
