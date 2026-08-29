@@ -127,6 +127,9 @@ export class PipelineForecastingService {
       targetStage === DealStage.NEGOTIATION_REVIEW ||
       targetStage === DealStage.CLOSED_WON
     ) {
+      if (!opp.meddic.isComplete) {
+        blockers.push('MEDDIC: Incomplete qualification criteria.');
+      }
       if (!opp.meddic.economicBuyer || opp.meddic.economicBuyer.trim() === '') {
         blockers.push('MEDDIC: Identified Economic Buyer is required for Proposal/Negotiation stage.');
       }

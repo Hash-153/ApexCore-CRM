@@ -92,18 +92,19 @@ cd "c:\health care"
 npm install
 
 # 3. Setup environment configuration
-cp .env.example .env
+# 4. Build Production Artifacts
+npm run build
 
-# 4. Run automated test suites
+# 5. Run automated test suites
 npm test
 
-# 5. Start Fullstack Platform (API Server + React Clinical Web Portal)
+# 6. Start Fullstack Platform (API Server + React Web Portal)
 npm run dev
 ```
 
 The system will start:
-- **API Backend**: `http://localhost:5000` (API prefix: `/api/v1`)
-- **Clinical Web Portal**: `http://localhost:3000`
+- **API Backend**: `http://localhost:5000` (API prefix: `/api/v1` and `/api/crm`)
+- **Web Portal Workstation**: `http://localhost:3000`
 - **Health Check**: `http://localhost:5000/health`
 
 ---
@@ -129,7 +130,65 @@ Test coverage includes:
 
 ---
 
+## 💼 ApexCore Enterprise Customer Relationship Management (CRM)
+
+A comprehensive, production-grade, human-crafted Enterprise CRM and Revenue Operations platform built with **Clean Architecture**, **Domain-Driven Design (DDD)**, and strict secrets isolation.
+
+### 🏢 CRM Subsystems & Modules
+1. **Lead Intelligence & BANT Scoring Engine**:
+   - Automated demographic, firmographic, and BANT scoring (Budget, Authority, Need, Timeline).
+   - Atomic 1-Click Lead Conversion into Account, Contact, and Opportunity entities.
+   - Fuzzy deduplication and round-robin sales rep lead routing.
+2. **Account 360 & Relationship Graph**:
+   - Multi-tier parent-child corporate organizational hierarchies.
+   - Dynamic Account Health Index and Churn Risk calculation engine.
+   - Associated buying committees with stakeholder influence scores.
+3. **Deal Pipeline Kanban & Sales Forecasting**:
+   - Multi-pipeline Kanban board with stage transition gatekeepers.
+   - MEDDIC sales methodology compliance validation (Metrics, Economic Buyer, Decision Criteria, Decision Process, Pain, Champion).
+   - Weighted pipeline probability forecasting and stage stagnation alarms.
+4. **Configure, Price, Quote (CPQ) & Dynamic Pricing**:
+   - Multi-tier volume discount rules and multi-currency enterprise price books.
+   - Margin threshold checks triggering VP Revenue approval workflows.
+   - Formal quote PDF generation data structures.
+5. **Billing, Contracts & Subscription Revenue**:
+   - ARR/MRR waterfall reporting (New, Expansion, Contraction, Churn, Net Retention).
+   - Mid-cycle subscription proration calculation and automated invoice generation.
+6. **Customer Support Helpdesk & SLA Engine**:
+   - Omnichannel ticket triage (Web, Email, Phone, API).
+   - Live resolution countdown timers with automated P1/P2 breach escalations.
+   - Agent reply tracking with First Response timer resolution.
+7. **Marketing Automation & Multi-Touch Attribution**:
+   - Omnichannel campaign ROI and conversion tracking.
+   - Multi-touch revenue attribution modeling (First-Touch, Last-Touch, Linear, Time-Decay).
+8. **Visual Trigger-Condition-Action Workflow Engine**:
+   - Recursive boolean condition evaluator (`AND` / `OR` trees).
+   - Automated actions: Field updates, Owner assignment, Task generation, Notification emails, HMAC signed webhooks.
+9. **Dynamic Schema Customizer**:
+   - Runtime custom field registration (Text, Number, Currency, Dropdowns) with zero database migrations.
+10. **Security & Cryptographic Audit Trails**:
+    - Granular RBAC permission gates (`leads:read`, `quotes:approve`, `admin:*`).
+    - Sequential SHA-256 cryptographic hash-chaining of all tenant mutations.
+
+### 🧪 CRM Automated Test Suites
+Run the dedicated CRM test suites:
+```bash
+npm run test:crm
+```
+Test files:
+- `server/tests/crm/leadManagement.test.ts` - BANT evaluation, ratings, 1-Click atomic conversion.
+- `server/tests/crm/pipelineForecasting.test.ts` - Weighted pipeline math, MEDDIC transition gatekeeper.
+- `server/tests/crm/cpqPricing.test.ts` - Volume tier discounts, floor price checks, executive approvals.
+- `server/tests/crm/slaHelpdesk.test.ts` - SLA countdowns, breach alarms, first response timers.
+- `server/tests/crm/workflowEngine.test.ts` - Condition trees, field mutations, task auto-dispatch.
+- `server/tests/crm/rbacSecurity.test.ts` - Role permission gates, SHA-256 audit chain verification.
+- `server/tests/crm/dataImportExport.test.ts` - CSV bulk ingestion, deduplication, HMAC signed webhooks.
+
+---
+
 ## 🔒 Security & Privacy Standard
 - **No Hardcoded Secrets**: All configuration is loaded from environment variables with safe defaults.
 - **Git Exclusions**: Strict `.gitignore` prevents `.env`, secrets, credentials, certificates, or logs from entering version control.
 - **Zero Open-Source Copying**: 100% human-crafted clean architecture codebase.
+- **No Apache Server / No GPL**: Modern native Node.js / TypeScript stack with zero GPL dependencies.
+
