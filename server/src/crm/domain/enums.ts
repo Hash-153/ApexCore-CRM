@@ -253,6 +253,14 @@ export const ContractStatus = {
 } as const;
 export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus];
 
+export const SubscriptionBillingCycle = {
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  ANNUAL: 'ANNUAL',
+  MULTI_YEAR: 'MULTI_YEAR'
+} as const;
+export type SubscriptionBillingCycle = (typeof SubscriptionBillingCycle)[keyof typeof SubscriptionBillingCycle];
+
 export const InvoiceStatus = {
   DRAFT: 'DRAFT',
   POSTED: 'POSTED',
@@ -351,6 +359,8 @@ export const CustomFieldDataType = {
   TEXTAREA: 'TEXTAREA'
 } as const;
 export type CustomFieldDataType = (typeof CustomFieldDataType)[keyof typeof CustomFieldDataType];
+export const FieldDataType = CustomFieldDataType;
+export type FieldDataType = CustomFieldDataType;
 
 export const AuditAction = {
   USER_LOGIN: 'USER_LOGIN',
