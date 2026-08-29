@@ -1,94 +1,88 @@
 /**
- * MediCore HealthOS - Core Express Application
+ * ApexCore Enterprise CRM - Express Application Server
  */
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from './config/index.ts';
-import { authenticate } from './security/authMiddleware.ts';
-
-// Subsystem Routers
-import patientRouter from './modules/patient/patient.router.ts';
-import clinicalRouter from './modules/clinical/clinical.router.ts';
-import triageRouter from './modules/triage/triage.router.ts';
-import pharmacyRouter from './modules/pharmacy/pharmacy.router.ts';
-import limsRouter from './modules/lims/lims.router.ts';
-import telehealthRouter from './modules/telehealth/telehealth.router.ts';
-import billingRouter from './modules/billing/billing.router.ts';
-import analyticsRouter from './modules/analytics/analytics.router.ts';
-import auditRouter from './modules/audit/audit.router.ts';
-import radiologyRouter from './radiology/radiology.router.ts';
-import inpatientRouter from './inpatient/inpatient.router.ts';
-import emarRouter from './emar/emar.router.ts';
 import { createCRMRouter } from './crm/routes/crmRoutes.ts';
+import { CRMDatabase } from './crm/database/crm_database.ts';
+import { seedCRMDatabase } from './crm/database/seed_data.ts';
+
+// Initialize In-Memory Database & Enterprise Seed Data
+const db = CRMDatabase.getInstance();
+seedCRMDatabase(db);
 
 export const app = express();
 
 // Security & Parsing Middleware
 app.use(
   cors({
-    origin: '*', // Allows seamless development between Vite client and API
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-MediCore-Role', 'X-Access-Reason'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id', 'x-user-id', 'X-Access-Reason'],
   })
 );
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Principal & Session Authentication Middleware
-app.use(authenticate);
-
 // Health & System Info
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'HEALTHY',
-    service: 'MediCore HealthOS API',
-    version: '1.0.0',
+    service: 'ApexCore Enterprise CRM API Platform',
+    version: '2.0.0',
     timestamp: new Date().toISOString(),
-    standardsSupported: ['HL7 FHIR R4', 'HIPAA 45 CFR 164', 'ICD-10-CM', 'CPT-4', 'ESI v4', 'NEWS2'],
+    supportedStandards: ['ApexCore CRM 5-Role RBAC', 'BANT Lead Engine', 'MEDDIC Forecasting', 'CPQ Pricing', 'SLA Helpdesk'],
+    entities: {
+      users: db.users.size,
+      customers: db.customers.size,
+      contacts: db.contacts.size,
+      leads: db.leads.size,
+      opportunities: db.opportunities.size,
+      quotes: db.quotes.size,
+      tickets: db.tickets.size
+    }
   });
 });
 
 app.get(`${config.apiPrefix}/health`, (req: Request, res: Response) => {
   res.json({
     status: 'HEALTHY',
-    service: 'MediCore HealthOS API',
-    version: '1.0.0',
+    service: 'ApexCore Enterprise CRM API Platform',
+    version: '2.0.0',
     timestamp: new Date().toISOString(),
   });
 });
 
-// API Routes
-app.use(`${config.apiPrefix}/patients`, patientRouter);
-app.use(`${config.apiPrefix}/clinical`, clinicalRouter);
-app.use(`${config.apiPrefix}/triage`, triageRouter);
-app.use(`${config.apiPrefix}/pharmacy`, pharmacyRouter);
-app.use(`${config.apiPrefix}/lims`, limsRouter);
-app.use(`${config.apiPrefix}/telehealth`, telehealthRouter);
-app.use(`${config.apiPrefix}/billing`, billingRouter);
-app.use(`${config.apiPrefix}/analytics`, analyticsRouter);
-app.use(`${config.apiPrefix}/audit`, auditRouter);
-app.use(`${config.apiPrefix}/radiology`, radiologyRouter);
-app.use(`${config.apiPrefix}/inpatient`, inpatientRouter);
-app.use(`${config.apiPrefix}/emar`, emarRouter);
-app.use(`${config.apiPrefix}/crm`, createCRMRouter());
-app.use('/api/crm', createCRMRouter());
+// Primary CRM Subsystem Router
+const crmRouter = createCRMRouter();
+app.use('/api', crmRouter);
+app.use('/api/crm', crmRouter);
+app.use(`${config.apiPrefix}/crm`, crmRouter);
+
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  const statusCode = err.status || err.statusCode || 500;
+  console.error(`[API ERROR] ${req.method} ${req.path}:`, err.message || err);
+
+  res.status(statusCode).json({
+    error: {
+      message: err.message || 'Internal Server Error',
+      status: statusCode,
+      timestamp: new Date().toISOString(),
+    },
+  });
+});
 
 // 404 Route Catch-All
 app.use((req: Request, res: Response) => {
   res.status(404).json({
-    success: false,
-    error: `Endpoint not found: ${req.method} ${req.originalUrl}`,
-  });
-});
-
-// Global Error Handler with PHI Protection
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('[UNHANDLED ERROR]', err);
-  res.status(err.status || 500).json({
-    success: false,
-    error: err.message || 'Internal Server Error',
-    requestId: `REQ-${Date.now()}`,
+    error: {
+      message: `Resource not found: ${req.method} ${req.path}`,
+      status: 404,
+      timestamp: new Date().toISOString(),
+    },
   });
 });

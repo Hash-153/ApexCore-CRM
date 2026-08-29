@@ -7,6 +7,13 @@
  */
 
 import type {
+  UserRole,
+  UserStatus,
+  CustomerStatus,
+  CustomerTier,
+  CustomerLifecycleStage,
+  InteractionType,
+  AttachmentCategory,
   LeadStatus,
   LeadRating,
   LeadSource,
@@ -16,13 +23,10 @@ import type {
   AccountTier,
   IndustryClassification,
   ContactPersona,
-  ActivityType,
-  ActivityPriority,
-  ActivityStatus,
   QuoteStatus,
   DiscountType,
   ContractStatus,
-  SubscriptionBillingCycle,
+  InvoiceStatus,
   TicketStatus,
   TicketPriority,
   TicketChannel,
@@ -31,9 +35,7 @@ import type {
   CampaignType,
   WorkflowTriggerType,
   WorkflowActionType,
-  FieldDataType,
-  UserRole,
-  AuditAction
+  CustomFieldDataType
 } from './enums.ts';
 
 export interface BaseEntity {
@@ -50,6 +52,145 @@ export interface CustomFieldValues {
   [fieldKey: string]: string | number | boolean | string[] | null | undefined;
 }
 
+// ============================================================================
+// 1. User Authentication & 5 Core RBAC Models
+// ============================================================================
+export interface User extends BaseEntity {
+  email: string;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  role: UserRole;
+  status: UserStatus;
+  department: string;
+  jobTitle: string;
+  avatarUrl?: string;
+  phoneNumber?: string;
+  quotaARR?: number;
+  lastLoginAt?: string;
+  failedLoginAttempts: number;
+  lockedUntil?: string;
+  passwordResetToken?: string;
+  passwordResetExpiresAt?: string;
+}
+
+export interface Session {
+  token: string;
+  userId: string;
+  tenantId: string;
+  role: UserRole;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface PasswordResetToken {
+  id: string;
+  token: string;
+  userId: string;
+  email: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
+export interface RolePermissions {
+  role: UserRole;
+  description: string;
+  permissions: string[];
+}
+
+// ============================================================================
+// 2. Customer Management Models
+// ============================================================================
+export interface Customer extends BaseEntity {
+  customerNumber: string;
+  name: string;
+  legalName?: string;
+  domain?: string;
+  status: CustomerStatus;
+  tier: CustomerTier;
+  lifecycleStage: CustomerLifecycleStage;
+  industry: string;
+  industryCode?: string;
+  annualRevenue: number;
+  employeeCount: number;
+  parentCustomerId?: string;
+  ownerId: string;
+  ownerName: string;
+  healthScore: number; // 0-100
+  churnRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  expansionProbability: number; // 0-100
+  lifetimeValue: number;
+  activeARR: number;
+  phone: string;
+  email: string;
+  website: string;
+  billingAddress: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  shippingAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  tags: string[];
+  customFields?: CustomFieldValues;
+}
+
+export interface CustomerInteraction extends BaseEntity {
+  customerId: string;
+  customerName: string;
+  contactId?: string;
+  contactName?: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  type: InteractionType;
+  subject: string;
+  description: string;
+  channel: string;
+  durationMinutes?: number;
+  sentiment?: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  outcome?: string;
+  nextSteps?: string;
+  scheduledAt?: string;
+  completedAt?: string;
+}
+
+export interface CustomerNote extends BaseEntity {
+  customerId: string;
+  userId: string;
+  authorName: string;
+  authorRole: UserRole;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  tags: string[];
+}
+
+export interface CustomerAttachment extends BaseEntity {
+  customerId: string;
+  fileName: string;
+  fileSize: number; // in bytes
+  mimeType: string;
+  category: AttachmentCategory;
+  downloadUrl: string;
+  uploadedBy: string;
+  uploaderName: string;
+  version: string;
+  checksumSha256?: string;
+}
+
+// ============================================================================
+// 3. Lead & Qualification (BANT) Models
+// ============================================================================
 export interface BANTScore {
   budgetScore: number; // 0-25
   authorityScore: number; // 0-25
@@ -60,115 +201,61 @@ export interface BANTScore {
   isQualified: boolean;
 }
 
-export interface LeadScoreBreakdown {
-  demographicScore: number;
-  behavioralScore: number;
-  bantScore: number;
-  overallScore: number; // 0-100
-  rating: LeadRating;
-  scoringFactors: string[];
-}
-
 export interface Lead extends BaseEntity {
+  leadNumber: string;
   firstName: string;
   lastName: string;
   title: string;
-  companyName: string;
   email: string;
   phone: string;
-  website?: string;
-  industry: IndustryClassification;
-  annualRevenue?: number;
-  numberOfEmployees?: number;
-  source: LeadSource;
+  companyName: string;
+  industry: string;
+  employeeCount: number;
+  annualRevenue: number;
+  website: string;
   status: LeadStatus;
   rating: LeadRating;
-  score: number;
-  bant: BANTScore;
+  source: LeadSource;
+  sourceCampaignId?: string;
   ownerId: string;
   ownerName: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  notes?: string;
+  score: number;
+  bant: BANTScore;
   convertedAccountId?: string;
   convertedContactId?: string;
   convertedOpportunityId?: string;
   convertedAt?: string;
+  notes?: string;
   customFields?: CustomFieldValues;
 }
 
-export interface AccountHierarchyNode {
-  accountId: string;
-  accountName: string;
-  tier: AccountTier;
-  annualRevenue: number;
-  childAccounts: AccountHierarchyNode[];
-}
-
-export interface AccountHealthMetrics {
-  healthScore: number; // 0-100
-  churnRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  expansionProbability: number; // 0-100%
-  activeOpportunitiesValue: number;
-  totalWonDealsValue: number;
-  openTicketsCount: number;
-  lastContactedDaysAgo: number;
-  relationshipStrengthScore: number;
-}
-
-export interface Account extends BaseEntity {
-  name: string;
-  type: AccountType;
-  tier: AccountTier;
-  industry: IndustryClassification;
-  website?: string;
-  phone: string;
-  annualRevenue: number;
-  employeeCount: number;
-  parentAccountId?: string;
-  parentAccountName?: string;
-  ownerId: string;
-  ownerName: string;
-  billingStreet: string;
-  billingCity: string;
-  billingState: string;
-  billingPostalCode: string;
-  billingCountry: string;
-  shippingStreet?: string;
-  shippingCity?: string;
-  shippingState?: string;
-  shippingPostalCode?: string;
-  shippingCountry?: string;
-  healthMetrics: AccountHealthMetrics;
-  customFields?: CustomFieldValues;
-}
-
+// ============================================================================
+// 4. Contact & Influence Graph
+// ============================================================================
 export interface Contact extends BaseEntity {
-  accountId: string;
-  accountName: string;
   firstName: string;
   lastName: string;
-  title: string;
-  department?: string;
   email: string;
   phone: string;
   mobilePhone?: string;
+  title: string;
+  department: string;
+  accountId: string;
+  accountName: string;
+  reportsToContactId?: string;
   persona: ContactPersona;
-  isPrimaryContact: boolean;
   decisionInfluenceScore: number; // 1-10
-  sentimentIndex: number; // -1.0 to 1.0
-  doNotCall?: boolean;
-  emailOptOut?: boolean;
-  gdprConsentDate?: string;
-  lastInteractionDate?: string;
-  ownerId: string;
-  ownerName: string;
+  sentimentScore: number; // 1-10
+  isPrimaryForAccount: boolean;
+  doNotCall: boolean;
+  emailOptOut: boolean;
+  preferredContactMethod: 'EMAIL' | 'PHONE' | 'SLACK' | 'SMS';
   customFields?: CustomFieldValues;
 }
 
+// ============================================================================
+// 5. Deal Pipeline & MEDDIC Forecasting
+// ============================================================================
 export interface MEDDICAssessment {
   metrics: string;
   economicBuyer: string;
@@ -177,61 +264,39 @@ export interface MEDDICAssessment {
   identifyPain: string;
   champion: string;
   isComplete: boolean;
-}
-
-export interface OpportunityStageHistory {
-  fromStage?: DealStage;
-  toStage: DealStage;
-  changedAt: string;
-  changedBy: string;
-  durationInPreviousStageDays: number;
-  stageNote?: string;
+  scorePercentage: number;
 }
 
 export interface Opportunity extends BaseEntity {
+  opportunityNumber: string;
   name: string;
   accountId: string;
   accountName: string;
-  primaryContactId?: string;
-  primaryContactName?: string;
+  primaryContactId: string;
+  primaryContactName: string;
   stage: DealStage;
-  amount: number;
-  expectedRevenue: number;
   probabilityPercentage: number;
   forecastCategory: ForecastCategory;
-  pipelineId: string;
-  pipelineName: string;
+  amount: number;
+  currency: string;
+  expectedRevenue: number;
   closeDate: string;
-  type: 'NEW_BUSINESS' | 'UPSELL' | 'RENEWAL' | 'CROSS_SELL';
-  leadSource?: LeadSource;
+  actualCloseDate?: string;
+  pipelineId: string;
   ownerId: string;
   ownerName: string;
+  leadSource: LeadSource;
+  campaignId?: string;
+  lostReason?: string;
+  wonReason?: string;
   meddic: MEDDICAssessment;
-  stageHistory: OpportunityStageHistory[];
-  winLossReason?: string;
-  competitors?: string[];
-  daysInCurrentStage: number;
-  isStagnant: boolean;
+  lineItemsCount: number;
   customFields?: CustomFieldValues;
 }
 
-export interface PipelineStageConfig {
-  id: string;
-  stage: DealStage;
-  displayName: string;
-  defaultProbability: number;
-  defaultForecastCategory: ForecastCategory;
-  orderIndex: number;
-  requiredFieldsToEnter?: string[];
-}
-
-export interface Pipeline extends BaseEntity {
-  name: string;
-  description: string;
-  isDefault: boolean;
-  stages: PipelineStageConfig[];
-}
-
+// ============================================================================
+// 6. CPQ & Dynamic Pricing Models
+// ============================================================================
 export interface Product extends BaseEntity {
   sku: string;
   name: string;
@@ -240,100 +305,87 @@ export interface Product extends BaseEntity {
   unitPrice: number;
   currency: string;
   isActive: boolean;
-  billingFrequency: 'ONE_TIME' | 'MONTHLY' | 'ANNUAL';
+  billingFrequency: 'MONTHLY' | 'ANNUAL' | 'ONE_TIME';
   taxCode: string;
-  costPrice?: number;
 }
 
-export interface PriceBookEntry {
+export interface PriceBookTierDiscount {
+  minQuantity: number;
+  maxQuantity?: number;
+  discountPercentage: number;
+}
+
+export interface PriceBookEntry extends BaseEntity {
+  priceBookId: string;
   productId: string;
-  productSku: string;
   productName: string;
+  productSku: string;
   listPrice: number;
-  minimumPrice: number;
-  tierDiscounts?: {
-    minQuantity: number;
-    discountPercentage: number;
-  }[];
+  currency: string;
+  floorPrice: number; // Lowest allowed price without VP approval
+  volumeTiers: PriceBookTierDiscount[];
 }
 
 export interface PriceBook extends BaseEntity {
   name: string;
-  currency: string;
-  isActive: boolean;
+  description: string;
   isStandard: boolean;
-  entries: PriceBookEntry[];
+  isActive: boolean;
+  currency: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
 }
 
 export interface QuoteLineItem {
   id: string;
   productId: string;
-  productSku: string;
   productName: string;
+  productSku: string;
   quantity: number;
   listPrice: number;
-  unitPrice: number;
-  discountType: DiscountType;
-  discountValue: number;
-  discountAmount: number;
-  subtotal: number;
-  taxRatePercentage: number;
-  taxAmount: number;
-  totalAmount: number;
-  notes?: string;
+  volumeDiscountPercentage: number;
+  customDiscountType?: DiscountType;
+  customDiscountValue?: number;
+  finalUnitPrice: number;
+  totalExtendedPrice: number;
+  requiresFloorApproval: boolean;
 }
 
 export interface Quote extends BaseEntity {
   quoteNumber: string;
   opportunityId: string;
   opportunityName: string;
-  accountId: string;
-  accountName: string;
-  primaryContactId: string;
-  primaryContactName: string;
   priceBookId: string;
   status: QuoteStatus;
-  expirationDate: string;
-  lineItems: QuoteLineItem[];
+  currency: string;
   subtotal: number;
   totalDiscountAmount: number;
   taxAmount: number;
   grandTotal: number;
-  currency: string;
-  paymentTerms: string;
+  termsAndConditions: string;
+  validUntil: string;
   approvedBy?: string;
   approvedAt?: string;
   rejectionReason?: string;
-  version: number;
-  notes?: string;
+  lineItems: QuoteLineItem[];
 }
 
+// ============================================================================
+// 7. Contracts & Billing Models
+// ============================================================================
 export interface Contract extends BaseEntity {
   contractNumber: string;
   accountId: string;
   accountName: string;
-  opportunityId?: string;
-  quoteId?: string;
+  opportunityId: string;
+  status: ContractStatus;
   startDate: string;
   endDate: string;
-  status: ContractStatus;
-  billingCycle: SubscriptionBillingCycle;
-  contractValueARR: number;
-  totalContractValueTCV: number;
   autoRenew: boolean;
-  signedDate?: string;
-  signeeName?: string;
-  ownerId: string;
-  termsAndConditions: string;
-}
-
-export interface InvoiceLineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxAmount: number;
-  totalAmount: number;
+  totalContractValue: number;
+  annualRecurringRevenue: number;
+  paymentTerms: string;
+  billingCycle: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
 }
 
 export interface Invoice extends BaseEntity {
@@ -341,16 +393,29 @@ export interface Invoice extends BaseEntity {
   contractId: string;
   accountId: string;
   accountName: string;
+  status: InvoiceStatus;
   issueDate: string;
   dueDate: string;
-  status: 'DRAFT' | 'ISSUED' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'VOIDED';
+  paidDate?: string;
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
-  paidAmount: number;
+  amountPaid: number;
   balanceDue: number;
-  currency: string;
-  lineItems: InvoiceLineItem[];
+}
+
+// ============================================================================
+// 8. Helpdesk & SLA Engine Models
+// ============================================================================
+export interface SLAPerformance {
+  policyTier: SLAPolicyTier;
+  firstResponseDueAt: string;
+  resolutionDueAt: string;
+  firstResponseMetAt?: string;
+  resolutionMetAt?: string;
+  isFirstResponseBreached: boolean;
+  isResolutionBreached: boolean;
+  minutesRemainingToResolution: number;
 }
 
 export interface TicketComment {
@@ -363,17 +428,6 @@ export interface TicketComment {
   createdAt: string;
 }
 
-export interface TicketSLAPerformance {
-  policyTier: SLAPolicyTier;
-  firstResponseDueAt: string;
-  resolutionDueAt: string;
-  firstResponseMetAt?: string;
-  resolvedAt?: string;
-  isFirstResponseBreached: boolean;
-  isResolutionBreached: boolean;
-  minutesRemainingToResolution: number;
-}
-
 export interface Ticket extends BaseEntity {
   ticketNumber: string;
   subject: string;
@@ -381,168 +435,97 @@ export interface Ticket extends BaseEntity {
   status: TicketStatus;
   priority: TicketPriority;
   channel: TicketChannel;
-  accountId?: string;
-  accountName?: string;
-  contactId?: string;
-  contactName?: string;
-  contactEmail?: string;
-  assigneeId?: string;
-  assigneeName?: string;
-  sla: TicketSLAPerformance;
+  accountId: string;
+  accountName: string;
+  contactId: string;
+  contactName: string;
+  contactEmail: string;
+  assigneeId: string;
+  assigneeName: string;
   tags: string[];
+  sla: SLAPerformance;
   comments: TicketComment[];
-  csatScore?: number; // 1-5
-  csatFeedback?: string;
 }
 
-export interface SLAPolicyConfig {
-  id: string;
-  tier: SLAPolicyTier;
-  name: string;
-  firstResponseMinutes: {
-    P1_URGENT: number;
-    P2_HIGH: number;
-    P3_MEDIUM: number;
-    P4_LOW: number;
-  };
-  resolutionHours: {
-    P1_URGENT: number;
-    P2_HIGH: number;
-    P3_MEDIUM: number;
-    P4_LOW: number;
-  };
-  businessHoursOnly: boolean;
-}
-
-export interface CampaignMember {
-  id: string;
-  leadId?: string;
-  contactId?: string;
-  name: string;
-  email: string;
-  companyName: string;
-  status: 'SENT' | 'OPENED' | 'CLICKED' | 'BOUNCED' | 'UNSUBSCRIBED' | 'CONVERTED';
-  sentAt?: string;
-  engagedAt?: string;
-}
-
+// ============================================================================
+// 9. Marketing Automation & Attribution
+// ============================================================================
 export interface Campaign extends BaseEntity {
   name: string;
   type: CampaignType;
   status: CampaignStatus;
   startDate: string;
-  endDate: string;
-  budgetedCost: number;
+  endDate?: string;
+  budgetCost: number;
   actualCost: number;
   expectedRevenue: number;
   actualRevenueWon: number;
-  targetAudience: string;
-  membersCount: number;
-  openedCount: number;
-  clickedCount: number;
-  convertedCount: number;
   roiPercentage: number;
-  ownerId: string;
-  ownerName: string;
+  membersCount: number;
+  convertedCount: number;
+  description: string;
 }
 
+// ============================================================================
+// 10. Visual Workflow Automation Engine
+// ============================================================================
 export interface WorkflowCondition {
   field: string;
-  operator: 'EQUALS' | 'NOT_EQUALS' | 'CONTAINS' | 'GREATER_THAN' | 'LESS_THAN' | 'IS_EMPTY' | 'IS_NOT_EMPTY';
-  value: string | number | boolean;
+  operator: 'EQUALS' | 'NOT_EQUALS' | 'GREATER_THAN' | 'LESS_THAN' | 'CONTAINS' | 'STARTS_WITH';
+  value: any;
 }
 
 export interface WorkflowAction {
-  id: string;
   type: WorkflowActionType;
   targetField?: string;
-  value?: string | number | boolean;
+  targetValue?: any;
   recipientEmail?: string;
-  emailSubjectTemplate?: string;
-  emailBodyTemplate?: string;
-  taskTitleTemplate?: string;
-  taskDueDaysOffset?: number;
+  templateId?: string;
   webhookUrl?: string;
 }
 
 export interface WorkflowRule extends BaseEntity {
   name: string;
   description: string;
-  entityType: 'LEAD' | 'OPPORTUNITY' | 'ACCOUNT' | 'TICKET';
+  entityType: 'LEAD' | 'OPPORTUNITY' | 'ACCOUNT' | 'CUSTOMER' | 'TICKET' | 'QUOTE';
   triggerType: WorkflowTriggerType;
-  isActive: boolean;
   conditions: WorkflowCondition[];
   conditionLogic: 'AND' | 'OR';
   actions: WorkflowAction[];
+  isActive: boolean;
   executionCount: number;
   lastExecutedAt?: string;
 }
 
+// ============================================================================
+// 11. Dynamic Custom Schemas
+// ============================================================================
 export interface CustomFieldDefinition extends BaseEntity {
-  targetEntity: 'LEAD' | 'ACCOUNT' | 'CONTACT' | 'OPPORTUNITY' | 'TICKET';
+  targetEntity: 'LEAD' | 'OPPORTUNITY' | 'ACCOUNT' | 'CUSTOMER' | 'CONTACT' | 'TICKET';
   fieldName: string;
   fieldKey: string;
-  dataType: FieldDataType;
+  dataType: CustomFieldDataType;
   isRequired: boolean;
-  defaultValue?: string | number | boolean;
+  defaultValue?: any;
   dropdownOptions?: string[];
   helpText?: string;
-  orderIndex: number;
 }
 
-export interface User extends BaseEntity {
-  email: string;
-  fullName: string;
-  role: UserRole;
-  department: string;
-  isActive: boolean;
-  quotaARR: number;
-  territory: string;
-  permissions: string[];
-}
-
+// ============================================================================
+// 12. Security & SHA-256 Audit Trails
+// ============================================================================
 export interface AuditLogEntry {
   id: string;
   tenantId: string;
-  timestamp: string;
   actorId: string;
   actorName: string;
   actorRole: UserRole;
   clientIp: string;
-  action: AuditAction;
+  action: string;
   entityType: string;
   entityId: string;
+  timestamp: string;
   details: string;
-  previousValues?: Record<string, unknown>;
-  newValues?: Record<string, unknown>;
   previousHash: string;
   currentHash: string;
-}
-
-export interface Activity extends BaseEntity {
-  type: ActivityType;
-  subject: string;
-  description: string;
-  priority: ActivityPriority;
-  status: ActivityStatus;
-  dueDate: string;
-  completedDate?: string;
-  relatedEntityType: 'LEAD' | 'ACCOUNT' | 'CONTACT' | 'OPPORTUNITY' | 'TICKET';
-  relatedEntityId: string;
-  relatedEntityName: string;
-  ownerId: string;
-  ownerName: string;
-}
-
-export interface ExecutiveKPIOverview {
-  totalPipelineARR: number;
-  totalClosedWonARR: number;
-  averageDealSize: number;
-  winRatePercentage: number;
-  leadConversionRatePercentage: number;
-  activeLeadsCount: number;
-  openDealsCount: number;
-  openTicketsCount: number;
-  slaComplianceRatePercentage: number;
-  salesCycleAverageDays: number;
 }

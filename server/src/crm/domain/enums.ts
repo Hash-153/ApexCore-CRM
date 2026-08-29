@@ -6,6 +6,124 @@
  * enterprise revenue operations, customer support, and sales workflow automation.
  */
 
+// ============================================================================
+// 1. User Authentication & 5 Core RBAC Roles
+// ============================================================================
+export const UserRole = {
+  ADMIN: 'Admin',
+  SALES_MANAGER: 'Sales Manager',
+  SALES_REPRESENTATIVE: 'Sales Representative',
+  SUPPORT_AGENT: 'Support Agent',
+  MARKETING_EXECUTIVE: 'Marketing Executive',
+
+  // Granular Sub-Roles
+  GLOBAL_ADMIN: 'GLOBAL_ADMIN',
+  SALES_VP: 'SALES_VP',
+  ACCOUNT_EXECUTIVE: 'ACCOUNT_EXECUTIVE',
+  SALES_DEVELOPMENT_REP: 'SALES_DEVELOPMENT_REP',
+  SUPPORT_DIRECTOR: 'SUPPORT_DIRECTOR',
+  SUPPORT_SPECIALIST: 'SUPPORT_SPECIALIST',
+  MARKETING_MANAGER: 'MARKETING_MANAGER',
+  FINANCE_CONTROLLER: 'FINANCE_CONTROLLER',
+  READ_ONLY_AUDITOR: 'READ_ONLY_AUDITOR'
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  PENDING_INVITATION: 'PENDING_INVITATION',
+  LOCKED: 'LOCKED'
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
+// ============================================================================
+// 2. Customer Management & Lifecycle Status
+// ============================================================================
+export const CustomerStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  PROSPECT: 'PROSPECT',
+  CHURNED: 'CHURNED',
+  SUSPENDED: 'SUSPENDED',
+  ONBOARDING: 'ONBOARDING'
+} as const;
+export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus];
+
+export const CustomerTier = {
+  TIER_1_STRATEGIC: 'TIER_1_STRATEGIC',
+  TIER_2_KEY: 'TIER_2_KEY',
+  TIER_3_STANDARD: 'TIER_3_STANDARD',
+  TIER_4_EMERGING: 'TIER_4_EMERGING'
+} as const;
+export type CustomerTier = (typeof CustomerTier)[keyof typeof CustomerTier];
+
+export const CustomerLifecycleStage = {
+  SUBSCRIBER: 'SUBSCRIBER',
+  LEAD: 'LEAD',
+  MARKETING_QUALIFIED: 'MARKETING_QUALIFIED',
+  SALES_QUALIFIED: 'SALES_QUALIFIED',
+  OPPORTUNITY: 'OPPORTUNITY',
+  CUSTOMER: 'CUSTOMER',
+  EVANGELIST: 'EVANGELIST'
+} as const;
+export type CustomerLifecycleStage = (typeof CustomerLifecycleStage)[keyof typeof CustomerLifecycleStage];
+
+export const InteractionType = {
+  CALL: 'CALL',
+  EMAIL: 'EMAIL',
+  MEETING: 'MEETING',
+  DEMO: 'DEMO',
+  NOTE: 'NOTE',
+  SUPPORT_TICKET: 'SUPPORT_TICKET',
+  CONTRACT_SIGN: 'CONTRACT_SIGN',
+  STAGE_CHANGE: 'STAGE_CHANGE'
+} as const;
+export type InteractionType = (typeof InteractionType)[keyof typeof InteractionType];
+
+export const AttachmentCategory = {
+  CONTRACT: 'CONTRACT',
+  PROPOSAL: 'PROPOSAL',
+  INVOICE: 'INVOICE',
+  NDA: 'NDA',
+  SECURITY_REVIEW: 'SECURITY_REVIEW',
+  TECHNICAL_SPEC: 'TECHNICAL_SPEC',
+  CORRESPONDENCE: 'CORRESPONDENCE',
+  OTHER: 'OTHER'
+} as const;
+export type AttachmentCategory = (typeof AttachmentCategory)[keyof typeof AttachmentCategory];
+
+// ============================================================================
+// 3. Activity & Task Types
+// ============================================================================
+export const ActivityType = {
+  CALL: 'CALL',
+  EMAIL: 'EMAIL',
+  MEETING: 'MEETING',
+  TASK: 'TASK',
+  DEMO: 'DEMO',
+  NOTE: 'NOTE'
+} as const;
+export type ActivityType = (typeof ActivityType)[keyof typeof ActivityType];
+
+export const ActivityPriority = {
+  HIGH: 'HIGH',
+  NORMAL: 'NORMAL',
+  LOW: 'LOW'
+} as const;
+export type ActivityPriority = (typeof ActivityPriority)[keyof typeof ActivityPriority];
+
+export const ActivityStatus = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  OVERDUE: 'OVERDUE'
+} as const;
+export type ActivityStatus = (typeof ActivityStatus)[keyof typeof ActivityStatus];
+
+// ============================================================================
+// 4. Lead & Pipeline Enums
+// ============================================================================
 export const LeadStatus = {
   NEW: 'NEW',
   CONTACTED: 'CONTACTED',
@@ -81,9 +199,9 @@ export const AccountTier = {
 export type AccountTier = (typeof AccountTier)[keyof typeof AccountTier];
 
 export const IndustryClassification = {
-  HEALTHCARE_LIFE_SCIENCES: 'HEALTHCARE_LIFE_SCIENCES',
-  FINANCIAL_SERVICES: 'FINANCIAL_SERVICES',
-  TECHNOLOGY_SOFTWARE: 'TECHNOLOGY_SOFTWARE',
+  ENTERPRISE_SOFTWARE: 'ENTERPRISE_SOFTWARE',
+  FINANCIAL_SERVICES_FINTECH: 'FINANCIAL_SERVICES_FINTECH',
+  HEALTHCARE_MEDTECH: 'HEALTHCARE_MEDTECH',
   MANUFACTURING_LOGISTICS: 'MANUFACTURING_LOGISTICS',
   RETAIL_ECOMMERCE: 'RETAIL_ECOMMERCE',
   ENERGY_UTILITIES: 'ENERGY_UTILITIES',
@@ -98,88 +216,62 @@ export const ContactPersona = {
   DECISION_MAKER: 'DECISION_MAKER',
   ECONOMIC_BUYER: 'ECONOMIC_BUYER',
   TECHNICAL_EVALUATOR: 'TECHNICAL_EVALUATOR',
-  EXECUTIVE_SPONSOR: 'EXECUTIVE_SPONSOR',
   INTERNAL_CHAMPION: 'INTERNAL_CHAMPION',
+  GATEKEEPER: 'GATEKEEPER',
   INFLUENCER: 'INFLUENCER',
   END_USER: 'END_USER',
   BLOCKER: 'BLOCKER'
 } as const;
 export type ContactPersona = (typeof ContactPersona)[keyof typeof ContactPersona];
 
-export const ActivityType = {
-  CALL: 'CALL',
-  EMAIL: 'EMAIL',
-  MEETING: 'MEETING',
-  NOTE: 'NOTE',
-  TASK: 'TASK',
-  DEMO: 'DEMO',
-  CONTRACT_SENT: 'CONTRACT_SENT',
-  AUDIT_EVENT: 'AUDIT_EVENT'
-} as const;
-export type ActivityType = (typeof ActivityType)[keyof typeof ActivityType];
-
-export const ActivityPriority = {
-  LOW: 'LOW',
-  MEDIUM: 'MEDIUM',
-  HIGH: 'HIGH',
-  CRITICAL: 'CRITICAL'
-} as const;
-export type ActivityPriority = (typeof ActivityPriority)[keyof typeof ActivityPriority];
-
-export const ActivityStatus = {
-  PLANNED: 'PLANNED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-  DEFERRED: 'DEFERRED'
-} as const;
-export type ActivityStatus = (typeof ActivityStatus)[keyof typeof ActivityStatus];
-
 export const QuoteStatus = {
   DRAFT: 'DRAFT',
-  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  IN_REVIEW: 'IN_REVIEW',
+  PENDING_APPROVAL: 'IN_REVIEW',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
   PRESENTED: 'PRESENTED',
   ACCEPTED: 'ACCEPTED',
-  DECLINED: 'DECLINED',
   EXPIRED: 'EXPIRED'
 } as const;
 export type QuoteStatus = (typeof QuoteStatus)[keyof typeof QuoteStatus];
 
 export const DiscountType = {
   PERCENTAGE: 'PERCENTAGE',
-  FIXED_AMOUNT: 'FIXED_AMOUNT'
+  FIXED_AMOUNT: 'FIXED_AMOUNT',
+  OVERRIDE_UNIT_PRICE: 'OVERRIDE_UNIT_PRICE'
 } as const;
 export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType];
 
 export const ContractStatus = {
   DRAFT: 'DRAFT',
-  IN_APPROVAL: 'IN_APPROVAL',
-  ACTIVE: 'ACTIVE',
-  UNDER_AMENDMENT: 'UNDER_AMENDMENT',
+  UNDER_LEGAL_REVIEW: 'UNDER_LEGAL_REVIEW',
+  OUT_FOR_SIGNATURE: 'OUT_FOR_SIGNATURE',
+  EXECUTED_ACTIVE: 'EXECUTED_ACTIVE',
   EXPIRED: 'EXPIRED',
   TERMINATED: 'TERMINATED'
 } as const;
 export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus];
 
-export const SubscriptionBillingCycle = {
-  MONTHLY: 'MONTHLY',
-  QUARTERLY: 'QUARTERLY',
-  SEMI_ANNUAL: 'SEMI_ANNUAL',
-  ANNUAL: 'ANNUAL',
-  MULTI_YEAR: 'MULTI_YEAR'
+export const InvoiceStatus = {
+  DRAFT: 'DRAFT',
+  POSTED: 'POSTED',
+  SENT: 'SENT',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  VOIDED: 'VOIDED',
+  REFUNDED: 'REFUNDED'
 } as const;
-export type SubscriptionBillingCycle = (typeof SubscriptionBillingCycle)[keyof typeof SubscriptionBillingCycle];
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
 
 export const TicketStatus = {
-  NEW: 'NEW',
   OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
   PENDING_CUSTOMER: 'PENDING_CUSTOMER',
-  PENDING_INTERNAL: 'PENDING_INTERNAL',
-  ESCALATED: 'ESCALATED',
   RESOLVED: 'RESOLVED',
-  CLOSED: 'CLOSED'
+  CLOSED: 'CLOSED',
+  ESCALATED: 'ESCALATED'
 } as const;
 export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
 
@@ -192,12 +284,11 @@ export const TicketPriority = {
 export type TicketPriority = (typeof TicketPriority)[keyof typeof TicketPriority];
 
 export const TicketChannel = {
-  EMAIL: 'EMAIL',
   WEB_PORTAL: 'WEB_PORTAL',
+  EMAIL: 'EMAIL',
   PHONE: 'PHONE',
-  LIVE_CHAT: 'LIVE_CHAT',
-  API: 'API',
-  SOCIAL_MEDIA: 'SOCIAL_MEDIA'
+  SLACK_INTEGRATION: 'SLACK_INTEGRATION',
+  API: 'API'
 } as const;
 export type TicketChannel = (typeof TicketChannel)[keyof typeof TicketChannel];
 
@@ -209,6 +300,17 @@ export const SLAPolicyTier = {
 } as const;
 export type SLAPolicyTier = (typeof SLAPolicyTier)[keyof typeof SLAPolicyTier];
 
+export const CampaignType = {
+  EMAIL_DRIP: 'EMAIL_DRIP',
+  WEBINAR_SERIES: 'WEBINAR_SERIES',
+  TRADE_CONFERENCE: 'TRADE_CONFERENCE',
+  ABM_HIGH_TOUCH: 'ABM_HIGH_TOUCH',
+  PAID_SEARCH_SEM: 'PAID_SEARCH_SEM',
+  CONTENT_SYNDICATION: 'CONTENT_SYNDICATION',
+  SOCIAL_CAMPAIGN: 'SOCIAL_CAMPAIGN'
+} as const;
+export type CampaignType = (typeof CampaignType)[keyof typeof CampaignType];
+
 export const CampaignStatus = {
   PLANNING: 'PLANNING',
   ACTIVE: 'ACTIVE',
@@ -218,78 +320,49 @@ export const CampaignStatus = {
 } as const;
 export type CampaignStatus = (typeof CampaignStatus)[keyof typeof CampaignStatus];
 
-export const CampaignType = {
-  EMAIL_BLAST: 'EMAIL_BLAST',
-  DRIP_NURTURE: 'DRIP_NURTURE',
-  PRODUCT_LAUNCH: 'PRODUCT_LAUNCH',
-  WEBINAR: 'WEBINAR',
-  CONTENT_SYNDICATION: 'CONTENT_SYNDICATION',
-  CONFERENCE_EVENT: 'CONFERENCE_EVENT',
-  ACCOUNT_BASED_MARKETING: 'ACCOUNT_BASED_MARKETING'
-} as const;
-export type CampaignType = (typeof CampaignType)[keyof typeof CampaignType];
-
 export const WorkflowTriggerType = {
-  RECORD_CREATED: 'RECORD_CREATED',
-  RECORD_UPDATED: 'RECORD_UPDATED',
-  FIELD_VALUE_CHANGED: 'FIELD_VALUE_CHANGED',
-  STAGE_TRANSITIONED: 'STAGE_TRANSITIONED',
-  SLA_BREACH_WARNING: 'SLA_BREACH_WARNING',
-  SCHEDULED_TIME: 'SCHEDULED_TIME',
+  ON_RECORD_CREATED: 'ON_RECORD_CREATED',
+  ON_RECORD_UPDATED: 'ON_RECORD_UPDATED',
+  ON_STAGE_CHANGED: 'ON_STAGE_CHANGED',
+  ON_BANT_SCORE_THRESHOLD: 'ON_BANT_SCORE_THRESHOLD',
+  ON_INACTIVITY_TIMEOUT: 'ON_INACTIVITY_TIMEOUT',
   MANUAL_WEBHOOK: 'MANUAL_WEBHOOK'
 } as const;
 export type WorkflowTriggerType = (typeof WorkflowTriggerType)[keyof typeof WorkflowTriggerType];
 
 export const WorkflowActionType = {
-  SEND_EMAIL_NOTIFICATION: 'SEND_EMAIL_NOTIFICATION',
-  CREATE_TASK: 'CREATE_TASK',
   UPDATE_FIELD: 'UPDATE_FIELD',
   ASSIGN_OWNER: 'ASSIGN_OWNER',
-  DISPATCH_WEBHOOK: 'DISPATCH_WEBHOOK',
-  CREATE_AUDIT_LOG: 'CREATE_AUDIT_LOG',
-  TRIGGER_DRIP_CAMPAIGN: 'TRIGGER_DRIP_CAMPAIGN'
+  SEND_EMAIL_TEMPLATE: 'SEND_EMAIL_TEMPLATE',
+  CREATE_TASK: 'CREATE_TASK',
+  TRIGGER_WEBHOOK: 'TRIGGER_WEBHOOK',
+  CREATE_AUDIT_LOG: 'CREATE_AUDIT_LOG'
 } as const;
 export type WorkflowActionType = (typeof WorkflowActionType)[keyof typeof WorkflowActionType];
 
-export const FieldDataType = {
-  STRING: 'STRING',
+export const CustomFieldDataType = {
+  TEXT: 'TEXT',
   NUMBER: 'NUMBER',
-  BOOLEAN: 'BOOLEAN',
-  DATE: 'DATE',
-  DATETIME: 'DATETIME',
-  ENUM_DROPDOWN: 'ENUM_DROPDOWN',
-  MULTI_SELECT: 'MULTI_SELECT',
   CURRENCY: 'CURRENCY',
-  PERCENTAGE: 'PERCENTAGE',
-  FORMULA: 'FORMULA',
-  RELATION_LOOKUP: 'RELATION_LOOKUP'
+  DATE: 'DATE',
+  BOOLEAN: 'BOOLEAN',
+  DROPDOWN_SINGLE: 'DROPDOWN_SINGLE',
+  DROPDOWN_MULTI: 'DROPDOWN_MULTI',
+  TEXTAREA: 'TEXTAREA'
 } as const;
-export type FieldDataType = (typeof FieldDataType)[keyof typeof FieldDataType];
-
-export const UserRole = {
-  GLOBAL_ADMIN: 'GLOBAL_ADMIN',
-  SALES_VP: 'SALES_VP',
-  SALES_MANAGER: 'SALES_MANAGER',
-  ACCOUNT_EXECUTIVE: 'ACCOUNT_EXECUTIVE',
-  SALES_DEVELOPMENT_REP: 'SALES_DEVELOPMENT_REP',
-  SUPPORT_DIRECTOR: 'SUPPORT_DIRECTOR',
-  SUPPORT_SPECIALIST: 'SUPPORT_SPECIALIST',
-  MARKETING_MANAGER: 'MARKETING_MANAGER',
-  FINANCE_CONTROLLER: 'FINANCE_CONTROLLER',
-  READ_ONLY_AUDITOR: 'READ_ONLY_AUDITOR'
-} as const;
-export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+export type CustomFieldDataType = (typeof CustomFieldDataType)[keyof typeof CustomFieldDataType];
 
 export const AuditAction = {
-  CREATE: 'CREATE',
-  READ: 'READ',
-  UPDATE: 'UPDATE',
-  DELETE: 'DELETE',
-  EXPORT: 'EXPORT',
-  STAGE_TRANSITION: 'STAGE_TRANSITION',
-  QUALIFICATION_CONVERT: 'QUALIFICATION_CONVERT',
-  PERMISSION_GRANT: 'PERMISSION_GRANT',
-  SCHEMA_ALTER: 'SCHEMA_ALTER',
-  WORKFLOW_EXECUTE: 'WORKFLOW_EXECUTE'
+  USER_LOGIN: 'USER_LOGIN',
+  USER_REGISTRATION: 'USER_REGISTRATION',
+  RECORD_CREATED: 'RECORD_CREATED',
+  RECORD_UPDATED: 'RECORD_UPDATED',
+  RECORD_DELETED: 'RECORD_DELETED',
+  STATUS_TRANSITIONED: 'STATUS_TRANSITIONED',
+  BANT_QUALIFIED: 'BANT_QUALIFIED',
+  QUOTE_CALCULATED: 'QUOTE_CALCULATED',
+  QUOTE_APPROVED: 'QUOTE_APPROVED',
+  SLA_BREACH_DETECTED: 'SLA_BREACH_DETECTED',
+  WORKFLOW_EXECUTED: 'WORKFLOW_EXECUTED'
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];

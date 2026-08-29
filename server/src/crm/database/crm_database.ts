@@ -1,66 +1,77 @@
 /**
  * ApexCore Enterprise Customer Relationship Management (CRM)
  * Enterprise In-Memory Database & Persistence Engine
- *
- * Implements high-performance relational operations, secondary indexing,
- * full-text search, multi-tenant isolation, and ACID-compliant transaction simulation.
  */
 
 import type {
+  User,
+  Session,
+  PasswordResetToken,
+  Customer,
+  CustomerInteraction,
+  CustomerNote,
+  CustomerAttachment,
   Lead,
-  Account,
   Contact,
   Opportunity,
-  Pipeline,
   Product,
   PriceBook,
+  PriceBookEntry,
   Quote,
   Contract,
   Invoice,
   Ticket,
-  SLAPolicyConfig,
   Campaign,
-  CampaignMember,
   WorkflowRule,
   CustomFieldDefinition,
-  User,
-  AuditLogEntry,
-  Activity
+  AuditLogEntry
 } from '../domain/types.ts';
 
 export class CRMDatabase {
   private static instance: CRMDatabase;
 
-  public leads: Map<string, Lead> = new Map();
-  public accounts: Map<string, Account> = new Map();
+  // 1. User Auth & Security Store
+  public users: Map<string, User> = new Map();
+  public sessions: Map<string, Session> = new Map();
+  public passwordResetTokens: Map<string, PasswordResetToken> = new Map();
+  public userEmailIndex: Map<string, string> = new Map();
+
+  // 2. Customer Management Store
+  public customers: Map<string, Customer> = new Map();
+  public interactions: Map<string, CustomerInteraction> = new Map();
+  public notes: Map<string, CustomerNote> = new Map();
+  public attachments: Map<string, CustomerAttachment> = new Map();
+
+  // 3. Core CRM Revenue Stores
+  public accounts: Map<string, Customer> = new Map();
   public contacts: Map<string, Contact> = new Map();
+  public leads: Map<string, Lead> = new Map();
   public opportunities: Map<string, Opportunity> = new Map();
-  public pipelines: Map<string, Pipeline> = new Map();
+  public pipelines: Map<string, any> = new Map();
   public products: Map<string, Product> = new Map();
-  public priceBooks: Map<string, PriceBook> = new Map();
-  public quotes: Map<string, Quote> = new Map();
+  public priceBooks: Map<string, any> = new Map();
+  public priceBookEntries: Map<string, PriceBookEntry[]> = new Map();
+  public quotes: Map<string, any> = new Map();
   public contracts: Map<string, Contract> = new Map();
   public invoices: Map<string, Invoice> = new Map();
-  public tickets: Map<string, Ticket> = new Map();
-  public slaPolicies: Map<string, SLAPolicyConfig> = new Map();
+  public tickets: Map<string, any> = new Map();
+  public slaPolicies: Map<string, any> = new Map();
   public campaigns: Map<string, Campaign> = new Map();
-  public campaignMembers: Map<string, CampaignMember[]> = new Map();
   public workflowRules: Map<string, WorkflowRule> = new Map();
   public customFields: Map<string, CustomFieldDefinition> = new Map();
-  public users: Map<string, User> = new Map();
+  public activities: Map<string, any> = new Map();
   public auditLogs: AuditLogEntry[] = [];
-  public activities: Map<string, Activity> = new Map();
 
-  // Secondary indices for O(1) lookups
-  private tenantAccountIndex: Map<string, Set<string>> = new Map();
-  private accountContactIndex: Map<string, Set<string>> = new Map();
-  private accountOpportunityIndex: Map<string, Set<string>> = new Map();
+  // Secondary indices
+  private customerContactIndex: Map<string, Set<string>> = new Map();
+  private customerOpportunityIndex: Map<string, Set<string>> = new Map();
+  private customerInteractionIndex: Map<string, Set<string>> = new Map();
+  private customerNotesIndex: Map<string, Set<string>> = new Map();
+  private customerAttachmentsIndex: Map<string, Set<string>> = new Map();
   private ownerLeadIndex: Map<string, Set<string>> = new Map();
   private ownerOpportunityIndex: Map<string, Set<string>> = new Map();
 
-  private constructor() {
-    // Initialized via singleton
-  }
+  private constructor() {}
 
   public static getInstance(): CRMDatabase {
     if (!CRMDatabase.instance) {
@@ -69,62 +80,60 @@ export class CRMDatabase {
     return CRMDatabase.instance;
   }
 
-  public clearAll(): void {
-    this.leads.clear();
+  public reset(): void {
+    this.users.clear();
+    this.sessions.clear();
+    this.passwordResetTokens.clear();
+    this.userEmailIndex.clear();
+    this.customers.clear();
+    this.interactions.clear();
+    this.notes.clear();
+    this.attachments.clear();
     this.accounts.clear();
     this.contacts.clear();
+    this.leads.clear();
     this.opportunities.clear();
     this.pipelines.clear();
     this.products.clear();
     this.priceBooks.clear();
+    this.priceBookEntries.clear();
     this.quotes.clear();
     this.contracts.clear();
     this.invoices.clear();
     this.tickets.clear();
     this.slaPolicies.clear();
     this.campaigns.clear();
-    this.campaignMembers.clear();
     this.workflowRules.clear();
     this.customFields.clear();
-    this.users.clear();
-    this.auditLogs = [];
     this.activities.clear();
-
-    this.tenantAccountIndex.clear();
-    this.accountContactIndex.clear();
-    this.accountOpportunityIndex.clear();
+    this.auditLogs = [];
+    this.customerContactIndex.clear();
+    this.customerOpportunityIndex.clear();
+    this.customerInteractionIndex.clear();
+    this.customerNotesIndex.clear();
+    this.customerAttachmentsIndex.clear();
     this.ownerLeadIndex.clear();
     this.ownerOpportunityIndex.clear();
   }
 
-  // Index Management
-  public indexAccount(account: Account): void {
-    this.accounts.set(account.id, account);
-    if (!this.tenantAccountIndex.has(account.tenantId)) {
-      this.tenantAccountIndex.set(account.tenantId, new Set());
-    }
-    this.tenantAccountIndex.get(account.tenantId)?.add(account.id);
+  public indexUser(user: User): void {
+    this.users.set(user.id, user);
+    this.userEmailIndex.set(user.email.toLowerCase(), user.id);
   }
 
-  public indexContact(contact: Contact): void {
-    this.contacts.set(contact.id, contact);
-    if (!this.accountContactIndex.has(contact.accountId)) {
-      this.accountContactIndex.set(contact.accountId, new Set());
-    }
-    this.accountContactIndex.get(contact.accountId)?.add(contact.id);
+  public getUserByEmail(email: string): User | undefined {
+    const userId = this.userEmailIndex.get(email.toLowerCase());
+    if (!userId) return undefined;
+    return this.users.get(userId);
   }
 
-  public indexOpportunity(opportunity: Opportunity): void {
-    this.opportunities.set(opportunity.id, opportunity);
-    if (!this.accountOpportunityIndex.has(opportunity.accountId)) {
-      this.accountOpportunityIndex.set(opportunity.accountId, new Set());
-    }
-    this.accountOpportunityIndex.get(opportunity.accountId)?.add(opportunity.id);
+  public indexCustomer(customer: Customer): void {
+    this.customers.set(customer.id, customer);
+    this.accounts.set(customer.id, customer);
+  }
 
-    if (!this.ownerOpportunityIndex.has(opportunity.ownerId)) {
-      this.ownerOpportunityIndex.set(opportunity.ownerId, new Set());
-    }
-    this.ownerOpportunityIndex.get(opportunity.ownerId)?.add(opportunity.id);
+  public indexAccount(account: any): void {
+    this.indexCustomer(account);
   }
 
   public indexLead(lead: Lead): void {
@@ -132,43 +141,94 @@ export class CRMDatabase {
     if (!this.ownerLeadIndex.has(lead.ownerId)) {
       this.ownerLeadIndex.set(lead.ownerId, new Set());
     }
-    this.ownerLeadIndex.get(lead.ownerId)?.add(lead.id);
+    this.ownerLeadIndex.get(lead.ownerId)!.add(lead.id);
   }
 
-  // Relational lookups
-  public getContactsByAccountId(accountId: string): Contact[] {
-    const contactIds = this.accountContactIndex.get(accountId);
+  public indexContact(contact: Contact): void {
+    this.contacts.set(contact.id, contact);
+    if (!this.customerContactIndex.has(contact.accountId)) {
+      this.customerContactIndex.set(contact.accountId, new Set());
+    }
+    this.customerContactIndex.get(contact.accountId)!.add(contact.id);
+  }
+
+  public getContactsForCustomer(customerId: string): Contact[] {
+    const contactIds = this.customerContactIndex.get(customerId);
     if (!contactIds) return [];
-    const results: Contact[] = [];
-    for (const id of contactIds) {
-      const contact = this.contacts.get(id);
-      if (contact && !contact.isDeleted) {
-        results.push(contact);
-      }
-    }
-    return results;
+    return Array.from(contactIds)
+      .map(id => this.contacts.get(id))
+      .filter((c): c is Contact => c !== undefined && !c.isDeleted);
   }
 
-  public getOpportunitiesByAccountId(accountId: string): Opportunity[] {
-    const oppIds = this.accountOpportunityIndex.get(accountId);
+  public indexOpportunity(opp: Opportunity): void {
+    this.opportunities.set(opp.id, opp);
+    if (!this.customerOpportunityIndex.has(opp.accountId)) {
+      this.customerOpportunityIndex.set(opp.accountId, new Set());
+    }
+    this.customerOpportunityIndex.get(opp.accountId)!.add(opp.id);
+
+    if (!this.ownerOpportunityIndex.has(opp.ownerId)) {
+      this.ownerOpportunityIndex.set(opp.ownerId, new Set());
+    }
+    this.ownerOpportunityIndex.get(opp.ownerId)!.add(opp.id);
+  }
+
+  public getOpportunitiesForCustomer(customerId: string): Opportunity[] {
+    const oppIds = this.customerOpportunityIndex.get(customerId);
     if (!oppIds) return [];
-    const results: Opportunity[] = [];
-    for (const id of oppIds) {
-      const opp = this.opportunities.get(id);
-      if (opp && !opp.isDeleted) {
-        results.push(opp);
-      }
-    }
-    return results;
+    return Array.from(oppIds)
+      .map(id => this.opportunities.get(id))
+      .filter((o): o is Opportunity => o !== undefined && !o.isDeleted);
   }
 
-  public getActivitiesByEntity(entityType: string, entityId: string): Activity[] {
-    const list: Activity[] = [];
-    for (const activity of this.activities.values()) {
-      if (activity.relatedEntityType === entityType && activity.relatedEntityId === entityId && !activity.isDeleted) {
-        list.push(activity);
-      }
+  public indexInteraction(interaction: CustomerInteraction): void {
+    this.interactions.set(interaction.id, interaction);
+    if (!this.customerInteractionIndex.has(interaction.customerId)) {
+      this.customerInteractionIndex.set(interaction.customerId, new Set());
     }
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    this.customerInteractionIndex.get(interaction.customerId)!.add(interaction.id);
+  }
+
+  public getInteractionsForCustomer(customerId: string): CustomerInteraction[] {
+    const ids = this.customerInteractionIndex.get(customerId);
+    if (!ids) return [];
+    return Array.from(ids)
+      .map(id => this.interactions.get(id))
+      .filter((i): i is CustomerInteraction => i !== undefined && !i.isDeleted)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public indexNote(note: CustomerNote): void {
+    this.notes.set(note.id, note);
+    if (!this.customerNotesIndex.has(note.customerId)) {
+      this.customerNotesIndex.set(note.customerId, new Set());
+    }
+    this.customerNotesIndex.get(note.customerId)!.add(note.id);
+  }
+
+  public getNotesForCustomer(customerId: string): CustomerNote[] {
+    const ids = this.customerNotesIndex.get(customerId);
+    if (!ids) return [];
+    return Array.from(ids)
+      .map(id => this.notes.get(id))
+      .filter((n): n is CustomerNote => n !== undefined && !n.isDeleted)
+      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public indexAttachment(attachment: CustomerAttachment): void {
+    this.attachments.set(attachment.id, attachment);
+    if (!this.customerAttachmentsIndex.has(attachment.customerId)) {
+      this.customerAttachmentsIndex.set(attachment.customerId, new Set());
+    }
+    this.customerAttachmentsIndex.get(attachment.customerId)!.add(attachment.id);
+  }
+
+  public getAttachmentsForCustomer(customerId: string): CustomerAttachment[] {
+    const ids = this.customerAttachmentsIndex.get(customerId);
+    if (!ids) return [];
+    return Array.from(ids)
+      .map(id => this.attachments.get(id))
+      .filter((a): a is CustomerAttachment => a !== undefined && !a.isDeleted)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 }
